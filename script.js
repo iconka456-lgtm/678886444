@@ -1,53 +1,64 @@
 // ===================== Константы =====================
 const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-const STORAGE_KEY = 'ticketsAppData';
+const STORAGE_KEY = 'yandexTicketsData';
 
 // ===================== DOM =====================
 const appRoot = document.getElementById('appRoot');
 const bottomNav = document.getElementById('bottomNav');
+
+// Экраны
+const scheduleView = document.getElementById('scheduleView');
 const ticketsView = document.getElementById('ticketsView');
-const settingsView = document.getElementById('settingsView');
 const ticketDetailView = document.getElementById('ticketDetailView');
+const createTicketView = document.getElementById('createTicketView');
+
+// Расписание
+const scheduleFrom = document.getElementById('scheduleFrom');
+const scheduleTo = document.getElementById('scheduleTo');
+const swapScheduleBtn = document.getElementById('swapScheduleBtn');
+const findScheduleBtn = document.getElementById('findScheduleBtn');
+const scheduleList = document.getElementById('scheduleList');
+
+// Билеты
 const ticketsList = document.getElementById('ticketsList');
+const tabs = document.querySelectorAll('.tab');
 
-const fromInput = document.getElementById('fromInput');
-const toInput = document.getElementById('toInput');
-const swapBtn = document.getElementById('swapBtn');
-const dateInput = document.getElementById('dateInput');
-const trainType = document.getElementById('trainType');
-const priceInput = document.getElementById('priceInput');
-const createTicketBtn = document.getElementById('createTicketBtn');
-
-const detailRoute = document.getElementById('detailRoute');
+// Детали билета
+const detailDepartureTime = document.getElementById('detailDepartureTime');
+const detailArrivalTime = document.getElementById('detailArrivalTime');
+const detailFrom = document.getElementById('detailFrom');
+const detailTo = document.getElementById('detailTo');
 const detailDate = document.getElementById('detailDate');
-const detailValid = document.getElementById('detailValid');
+const detailType = document.getElementById('detailType');
 const detailPrice = document.getElementById('detailPrice');
 const detailNo = document.getElementById('detailNo');
-const detailType = document.getElementById('detailType');
-const detailTypeSub = document.getElementById('detailTypeSub');
-const barcodeCard = document.getElementById('barcodeCard');
-const backToTicketsBtn = document.getElementById('backToTicketsBtn');
-
+const barcodeImg = document.getElementById('barcodeImg');
+const backFromDetail = document.getElementById('backFromDetail');
 const helperToggle = document.getElementById('helperToggle');
 const helperBody = document.getElementById('helperBody');
 const helperChev = document.getElementById('helperChev');
 
+// Создание билета
+const createFrom = document.getElementById('createFrom');
+const createTo = document.getElementById('createTo');
+const createDate = document.getElementById('createDate');
+const createTrainType = document.getElementById('createTrainType');
+const createPrice = document.getElementById('createPrice');
+const saveTicketBtn = document.getElementById('saveTicketBtn');
+const backFromCreate = document.getElementById('backFromCreate');
+
+// Навигация
 const navItems = document.querySelectorAll('.nav-item');
-const tabs = document.querySelectorAll('.tab');
 
 // ===================== Состояние =====================
 let tickets = [];
 let currentTab = 'active';
+let currentTicket = null;
 
-// ===================== Проверка Telegram =====================
-function isTelegram() {
-  return !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
-}
-
-// ===================== Хаптика Telegram =====================
+// ===================== Хаптика =====================
 function haptic(style){
   try{
-    if (isTelegram() && window.Telegram.WebApp.HapticFeedback) {
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
       window.Telegram.WebApp.HapticFeedback.impactOccurred(style || 'light');
     }
   }catch(e){}
@@ -56,7 +67,7 @@ function haptic(style){
 // ===================== Яркость =====================
 function setMaxBrightness() {
   try {
-    if (isTelegram() && typeof window.Telegram.WebApp.setBrightness === 'function') {
+    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.setBrightness === 'function') {
       window.Telegram.WebApp.setBrightness(1.0);
     }
   } catch(e) {}
@@ -64,24 +75,16 @@ function setMaxBrightness() {
 
 function restoreBrightness() {
   try {
-    if (isTelegram() && typeof window.Telegram.WebApp.setBrightness === 'function') {
+    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.setBrightness === 'function') {
       window.Telegram.WebApp.setBrightness(0.5);
     }
   } catch(e) {}
 }
 
-// ===================== Безопасный localStorage =====================
-function safeGet(key) {
-  try { return localStorage.getItem(key); } catch(e) { return null; }
-}
-function safeSet(key, value) {
-  try { localStorage.setItem(key, value); } catch(e) {}
-}
-
-// ===================== Загрузка / Сохранение =====================
+// ===================== LocalStorage =====================
 function loadData(){
   try{
-    const raw = safeGet(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY);
     if(raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) return parsed;
@@ -91,7 +94,7 @@ function loadData(){
 }
 
 function saveData(){
-  try{ safeSet(STORAGE_KEY, JSON.stringify(tickets)); }catch(e){}
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets)); }catch(e){}
 }
 
 // ===================== Форматирование =====================
@@ -101,17 +104,10 @@ function formatDateRu(dateStr){
   return `${d.getDate()} ${MONTHS_GEN[d.getMonth()]}`;
 }
 
-function formatValidUntil(dateStr){
-  const d = new Date(dateStr + 'T00:00:00');
-  if(isNaN(d)) return '';
-  d.setDate(d.getDate() + 1);
-  return `Действителен до 01:00 ${d.getDate()} ${MONTHS_GEN[d.getMonth()]}`;
-}
-
 function generateTicketNumber(){
   let num = '3';
   for(let i=0; i<12; i++) num += Math.floor(Math.random()*10);
-  return `Билет № ${num}`;
+  return `№ ${num}`;
 }
 
 // ===================== Рендер списка билетов =====================
@@ -128,16 +124,13 @@ function renderTickets() {
 
   ticketsList.innerHTML = filtered.map(t => `
     <div class="ticket-card" data-id="${t.id}">
-      <div class="card-header">
-        <div class="card-route">${t.from} — ${t.to}</div>
-        <div class="card-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15.5C4 17.43 5.57 19 7.5 19L6 20.5V21h1.6l1.5-1.5h5.8L16.4 21H18v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-3.58-4-8-4s-8 .5-8 4v9.5zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM18 11H6V6h12v5z"/></svg>
-        </div>
+      <div class="card-top">
+        <div class="card-route">${t.from} → ${t.to}</div>
+        <div class="card-date">${formatDateRu(t.date)}</div>
       </div>
-      <div class="card-date">${formatDateRu(t.date)}</div>
-      <div class="card-footer">
-        <div class="card-price">${t.price} ₽</div>
-        <div class="card-no">${t.ticketNo}</div>
+      <div class="card-bottom">
+        <span class="card-price">${t.price} ₽</span>
+        <span class="card-no">${t.ticketNo}</span>
       </div>
     </div>
   `).join('');
@@ -153,24 +146,30 @@ function renderTickets() {
 
 // ===================== Открытие деталей билета =====================
 function openTicketDetail(ticket) {
-  detailRoute.textContent = `${ticket.from} — ${ticket.to}`;
+  currentTicket = ticket;
+  
+  detailFrom.textContent = ticket.from;
+  detailTo.textContent = ticket.to;
   detailDate.textContent = formatDateRu(ticket.date);
-  detailValid.textContent = formatValidUntil(ticket.date);
+  detailType.textContent = `Полный, ${ticket.trainType.toLowerCase()}`;
   detailPrice.textContent = `${ticket.price} ₽`;
   detailNo.textContent = ticket.ticketNo;
-  detailType.textContent = `Полный, в одну сторону`;
-  detailTypeSub.textContent = `Билет на электричку ${ticket.trainType.toLowerCase()}`;
   
-  barcodeCard.classList.remove('flipped');
+  // Генерация случайного времени для вида
+  const depHour = 9 + Math.floor(Math.random() * 10);
+  const depMin = Math.floor(Math.random() * 60);
+  const arrHour = depHour + 1;
+  const arrMin = Math.floor(Math.random() * 60);
+  
+  detailDepartureTime.textContent = `${String(depHour).padStart(2,'0')}:${String(depMin).padStart(2,'0')}`;
+  detailArrivalTime.textContent = `${String(arrHour).padStart(2,'0')}:${String(arrMin).padStart(2,'0')}`;
   
   if (helperBody) helperBody.classList.add('hidden');
   if (helperChev) helperChev.classList.remove('open');
   
-  // Скрываем все вкладки
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
   ticketDetailView.classList.remove('hidden');
   
-  // СКРЫВАЕМ НИЖНЮЮ НАВИГАЦИЮ
   if (bottomNav) bottomNav.style.display = 'none';
   if (appRoot) appRoot.classList.add('ticket-mode');
   
@@ -184,7 +183,6 @@ function switchView(viewId) {
   const target = document.getElementById(viewId);
   if (target) target.classList.remove('hidden');
   
-  // ПОКАЗЫВАЕМ НИЖНЮЮ НАВИГАЦИЮ
   if (bottomNav) bottomNav.style.display = 'flex';
   if (appRoot) appRoot.classList.remove('ticket-mode');
   
@@ -199,11 +197,11 @@ function switchView(viewId) {
 
 // ===================== Создание билета =====================
 function createTicket() {
-  const from = fromInput.value.trim() || 'Откуда';
-  const to = toInput.value.trim() || 'Куда';
-  const date = dateInput.value || new Date().toISOString().slice(0,10);
-  const price = priceInput.value || 0;
-  const type = trainType.value;
+  const from = createFrom.value.trim() || 'Откуда';
+  const to = createTo.value.trim() || 'Куда';
+  const date = createDate.value || new Date().toISOString().slice(0,10);
+  const price = createPrice.value || 0;
+  const type = createTrainType.value;
 
   const newTicket = {
     id: Date.now(),
@@ -224,23 +222,58 @@ function createTicket() {
   setTimeout(() => { renderTickets(); }, 50);
 }
 
+// ===================== Расписание (Заглушка) =====================
+function findSchedule() {
+  const from = scheduleFrom.value.trim();
+  const to = scheduleTo.value.trim();
+  
+  if (!from || !to) {
+    scheduleList.innerHTML = `<div class="empty-state">Заполните поля «Откуда» и «Куда»</div>`;
+    return;
+  }
+
+  // Имитация загрузки
+  scheduleList.innerHTML = `<div class="loader">Поиск рейсов...</div>`;
+  
+  setTimeout(() => {
+    // Генерируем фейковые рейсы для вида
+    const times = ['10:15', '10:45', '11:20', '12:05', '12:50', '13:30'];
+    scheduleList.innerHTML = times.map(t => `
+      <div class="schedule-item">
+        <div class="schedule-time">${t}</div>
+        <div class="schedule-info">
+          <div class="schedule-route">${from} → ${to}</div>
+          <div class="schedule-sub">В пути 1 ч 10 мин • 65 ₽</div>
+        </div>
+        <div class="schedule-arrow">›</div>
+      </div>
+    `).join('');
+  }, 500);
+}
+
 // ===================== Обработчики =====================
-if (swapBtn) {
-  swapBtn.addEventListener('click', () => {
-    const tmp = fromInput.value;
-    fromInput.value = toInput.value;
-    toInput.value = tmp;
-    swapBtn.style.transform = 'rotate(180deg)';
-    setTimeout(() => { swapBtn.style.transform = ''; }, 250);
+if (swapScheduleBtn) {
+  swapScheduleBtn.addEventListener('click', () => {
+    const tmp = scheduleFrom.value;
+    scheduleFrom.value = scheduleTo.value;
+    scheduleTo.value = tmp;
     haptic('light');
   });
 }
 
-if (createTicketBtn) createTicketBtn.addEventListener('click', createTicket);
+if (findScheduleBtn) findScheduleBtn.addEventListener('click', findSchedule);
 
-if (backToTicketsBtn) {
-  backToTicketsBtn.addEventListener('click', () => {
+if (saveTicketBtn) saveTicketBtn.addEventListener('click', createTicket);
+
+if (backFromDetail) {
+  backFromDetail.addEventListener('click', () => {
     restoreBrightness();
+    switchView('ticketsView');
+  });
+}
+
+if (backFromCreate) {
+  backFromCreate.addEventListener('click', () => {
     switchView('ticketsView');
   });
 }
@@ -249,7 +282,7 @@ if (backToTicketsBtn) {
 navItems.forEach(item => {
   item.addEventListener('click', () => {
     const view = item.dataset.view;
-    if (view === 'settingsView') {
+    if (view !== 'ticketDetailView') {
       restoreBrightness();
     }
     switchView(view);
@@ -266,21 +299,6 @@ tabs.forEach(tab => {
     haptic('light');
   });
 });
-
-// Переворот штрихкода
-let barcodeAnimating = false;
-if (barcodeCard) {
-  barcodeCard.addEventListener('click', () => {
-    if(barcodeAnimating) return;
-    barcodeAnimating = true;
-    haptic('light');
-    barcodeCard.classList.add('flipped');
-    setTimeout(() => {
-      barcodeCard.classList.remove('flipped');
-      setTimeout(() => { barcodeAnimating = false; }, 500);
-    }, 550);
-  });
-}
 
 // Аккордеон помощи
 if (helperToggle && helperBody && helperChev) {
@@ -299,23 +317,12 @@ if (helperToggle && helperBody && helperChev) {
 
 // ===================== Инициализация =====================
 tickets = loadData();
-
-if (dateInput) {
-  const today = new Date().toISOString().slice(0,10);
-  dateInput.value = today;
-}
-
+createDate.value = new Date().toISOString().slice(0,10);
 renderTickets();
 
-// Telegram Init
 try{
   if (window.Telegram && window.Telegram.WebApp) {
     window.Telegram.WebApp.ready();
-    if (typeof window.Telegram.WebApp.expand === 'function') {
-      window.Telegram.WebApp.expand();
-    }
-    if (typeof window.Telegram.WebApp.setHeaderColor === 'function') {
-      window.Telegram.WebApp.setHeaderColor('#f4f3f6');
-    }
+    if (typeof window.Telegram.WebApp.expand === 'function') window.Telegram.WebApp.expand();
   }
 }catch(e){}
