@@ -107,7 +107,6 @@ function formatValidUntil(dateStr){
 }
 
 function generateTicketNumber(){
-  // Номер всегда начинается с 3
   let num = '3';
   for(let i=0; i<12; i++) num += Math.floor(Math.random()*10);
   return `Билет № ${num}`;
@@ -123,7 +122,6 @@ function renderTickets() {
     return;
   }
 
-  // Сортируем по дате (сначала новые)
   filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   ticketsList.innerHTML = filtered.map(t => `
@@ -142,7 +140,6 @@ function renderTickets() {
     </div>
   `).join('');
 
-  // Добавляем обработчики кликов
   document.querySelectorAll('.ticket-card').forEach(card => {
     card.addEventListener('click', () => {
       const id = parseInt(card.dataset.id);
@@ -163,14 +160,14 @@ function openTicketDetail(ticket) {
   detailTypeSub.textContent = `Билет на электричку ${ticket.trainType.toLowerCase()}`;
   
   barcodeCard.classList.remove('flipped');
-  if (helperBody) helperBody.classList.remove('open');
+  
+  // СБРАСЫВАЕМ АККОРДЕОН ПОМОЩИ В ЗАКРЫТОЕ СОСТОЯНИЕ
+  if (helperBody) helperBody.classList.add('hidden');
   if (helperChev) helperChev.classList.remove('open');
   
-  // Скрываем все, показываем детали
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
   ticketDetailView.classList.remove('hidden');
   
-  // Включаем максимальную яркость
   setMaxBrightness();
   haptic('medium');
 }
@@ -249,7 +246,7 @@ navItems.forEach(item => {
   });
 });
 
-// Табы внутри списка билетов
+// Табы
 tabs.forEach(tab => {
   tab.addEventListener('click', () => {
     tabs.forEach(t => t.classList.remove('active'));
@@ -275,11 +272,19 @@ if (barcodeCard) {
   });
 }
 
-// Помощь
+// ===================== АККОРДЕОН ПОМОЩИ =====================
 if (helperToggle && helperBody && helperChev) {
   helperToggle.addEventListener('click', () => {
-    helperBody.classList.toggle('open');
-    helperChev.classList.toggle('open');
+    const isHidden = helperBody.classList.contains('hidden');
+    if (isHidden) {
+      // Открываем
+      helperBody.classList.remove('hidden');
+      helperChev.classList.add('open');
+    } else {
+      // Закрываем
+      helperBody.classList.add('hidden');
+      helperChev.classList.remove('open');
+    }
     haptic('light');
   });
 }
@@ -287,13 +292,11 @@ if (helperToggle && helperBody && helperChev) {
 // ===================== Инициализация =====================
 tickets = loadData();
 
-// Устанавливаем дату по умолчанию
 if (dateInput) {
   const today = new Date().toISOString().slice(0,10);
   dateInput.value = today;
 }
 
-// Первичный рендер
 renderTickets();
 
 // Telegram Init
