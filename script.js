@@ -3,6 +3,8 @@ const MONTHS_GEN = ['января','февраля','марта','апреля',
 const STORAGE_KEY = 'ticketsAppData';
 
 // ===================== DOM =====================
+const appRoot = document.getElementById('appRoot');
+const bottomNav = document.getElementById('bottomNav');
 const ticketsView = document.getElementById('ticketsView');
 const settingsView = document.getElementById('settingsView');
 const ticketDetailView = document.getElementById('ticketDetailView');
@@ -51,13 +53,13 @@ function haptic(style){
   }catch(e){}
 }
 
-// ===================== Яркость (только Telegram) =====================
+// ===================== Яркость =====================
 function setMaxBrightness() {
   try {
     if (isTelegram() && typeof window.Telegram.WebApp.setBrightness === 'function') {
       window.Telegram.WebApp.setBrightness(1.0);
     }
-  } catch(e) { /* ignore */ }
+  } catch(e) {}
 }
 
 function restoreBrightness() {
@@ -65,7 +67,7 @@ function restoreBrightness() {
     if (isTelegram() && typeof window.Telegram.WebApp.setBrightness === 'function') {
       window.Telegram.WebApp.setBrightness(0.5);
     }
-  } catch(e) { /* ignore */ }
+  } catch(e) {}
 }
 
 // ===================== Безопасный localStorage =====================
@@ -73,7 +75,7 @@ function safeGet(key) {
   try { return localStorage.getItem(key); } catch(e) { return null; }
 }
 function safeSet(key, value) {
-  try { localStorage.setItem(key, value); } catch(e) { /* ignore */ }
+  try { localStorage.setItem(key, value); } catch(e) {}
 }
 
 // ===================== Загрузка / Сохранение =====================
@@ -161,12 +163,16 @@ function openTicketDetail(ticket) {
   
   barcodeCard.classList.remove('flipped');
   
-  // СБРАСЫВАЕМ АККОРДЕОН ПОМОЩИ В ЗАКРЫТОЕ СОСТОЯНИЕ
   if (helperBody) helperBody.classList.add('hidden');
   if (helperChev) helperChev.classList.remove('open');
   
+  // Скрываем все вкладки
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
   ticketDetailView.classList.remove('hidden');
+  
+  // СКРЫВАЕМ НИЖНЮЮ НАВИГАЦИЮ
+  if (bottomNav) bottomNav.style.display = 'none';
+  if (appRoot) appRoot.classList.add('ticket-mode');
   
   setMaxBrightness();
   haptic('medium');
@@ -177,6 +183,10 @@ function switchView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
   const target = document.getElementById(viewId);
   if (target) target.classList.remove('hidden');
+  
+  // ПОКАЗЫВАЕМ НИЖНЮЮ НАВИГАЦИЮ
+  if (bottomNav) bottomNav.style.display = 'flex';
+  if (appRoot) appRoot.classList.remove('ticket-mode');
   
   navItems.forEach(item => {
     item.classList.toggle('active', item.dataset.view === viewId);
@@ -272,16 +282,14 @@ if (barcodeCard) {
   });
 }
 
-// ===================== АККОРДЕОН ПОМОЩИ =====================
+// Аккордеон помощи
 if (helperToggle && helperBody && helperChev) {
   helperToggle.addEventListener('click', () => {
     const isHidden = helperBody.classList.contains('hidden');
     if (isHidden) {
-      // Открываем
       helperBody.classList.remove('hidden');
       helperChev.classList.add('open');
     } else {
-      // Закрываем
       helperBody.classList.add('hidden');
       helperChev.classList.remove('open');
     }
