@@ -76,8 +76,8 @@ function formatValidUntil(dateStr){
 }
 
 function generateTicketNumber(){
-  let num = '';
-  for(let i=0; i<13; i++) num += Math.floor(Math.random()*10);
+  let num = '3';
+  for(let i=0; i<12; i++) num += Math.floor(Math.random()*10);
   return `Билет № ${num}`;
 }
 
