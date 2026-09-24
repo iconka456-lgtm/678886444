@@ -26,6 +26,10 @@ const detailTypeSub = document.getElementById('detailTypeSub');
 const barcodeCard = document.getElementById('barcodeCard');
 const backToTicketsBtn = document.getElementById('backToTicketsBtn');
 
+const helperToggle = document.getElementById('helperToggle');
+const helperBody = document.getElementById('helperBody');
+const helperChev = document.getElementById('helperChev');
+
 const navItems = document.querySelectorAll('.nav-item');
 const tabs = document.querySelectorAll('.tab');
 
@@ -33,44 +37,59 @@ const tabs = document.querySelectorAll('.tab');
 let tickets = [];
 let currentTab = 'active';
 
+// ===================== Проверка Telegram =====================
+function isTelegram() {
+  return !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
+}
+
 // ===================== Хаптика Telegram =====================
 function haptic(style){
   try{
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+    if (isTelegram() && window.Telegram.WebApp.HapticFeedback) {
       window.Telegram.WebApp.HapticFeedback.impactOccurred(style || 'light');
     }
   }catch(e){}
 }
 
-// ===================== Яркость (Telegram) =====================
+// ===================== Яркость (только Telegram) =====================
 function setMaxBrightness() {
   try {
-    if (window.Telegram && window.Telegram.WebApp) {
-      // Включаем максимальную яркость (если поддерживается устройством/приложением)
-      window.Telegram.WebApp.setBrightness(1.0); 
+    if (isTelegram() && typeof window.Telegram.WebApp.setBrightness === 'function') {
+      window.Telegram.WebApp.setBrightness(1.0);
     }
-  } catch(e) { console.log('Brightness API not supported'); }
+  } catch(e) { /* ignore */ }
 }
 
 function restoreBrightness() {
   try {
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.setBrightness(0.5); // Возвращаем на средний уровень
+    if (isTelegram() && typeof window.Telegram.WebApp.setBrightness === 'function') {
+      window.Telegram.WebApp.setBrightness(0.5);
     }
-  } catch(e) {}
+  } catch(e) { /* ignore */ }
+}
+
+// ===================== Безопасный localStorage =====================
+function safeGet(key) {
+  try { return localStorage.getItem(key); } catch(e) { return null; }
+}
+function safeSet(key, value) {
+  try { localStorage.setItem(key, value); } catch(e) { /* ignore */ }
 }
 
 // ===================== Загрузка / Сохранение =====================
 function loadData(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) return JSON.parse(raw);
+    const raw = safeGet(STORAGE_KEY);
+    if(raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
   }catch(e){}
   return [];
 }
 
 function saveData(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets)); }catch(e){}
+  try{ safeSet(STORAGE_KEY, JSON.stringify(tickets)); }catch(e){}
 }
 
 // ===================== Форматирование =====================
@@ -96,6 +115,7 @@ function generateTicketNumber(){
 
 // ===================== Рендер списка билетов =====================
 function renderTickets() {
+  if (!ticketsList) return;
   const filtered = tickets.filter(t => t.status === currentTab);
   
   if (filtered.length === 0) {
@@ -143,6 +163,8 @@ function openTicketDetail(ticket) {
   detailTypeSub.textContent = `Билет на электричку ${ticket.trainType.toLowerCase()}`;
   
   barcodeCard.classList.remove('flipped');
+  if (helperBody) helperBody.classList.remove('open');
+  if (helperChev) helperChev.classList.remove('open');
   
   // Скрываем все, показываем детали
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
@@ -156,9 +178,9 @@ function openTicketDetail(ticket) {
 // ===================== Навигация =====================
 function switchView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-  document.getElementById(viewId).classList.remove('hidden');
+  const target = document.getElementById(viewId);
+  if (target) target.classList.remove('hidden');
   
-  // Обновляем нижнюю навигацию
   navItems.forEach(item => {
     item.classList.toggle('active', item.dataset.view === viewId);
   });
@@ -184,38 +206,37 @@ function createTicket() {
     price,
     trainType: type,
     ticketNo: generateTicketNumber(),
-    status: 'active' // 'active' или 'used'
+    status: 'active'
   };
 
   tickets.push(newTicket);
   saveData();
   haptic('medium');
 
-  // Переключаемся на вкладку билетов
   switchView('ticketsView');
-  
-  // Небольшая задержка, чтобы рендер прошел
-  setTimeout(() => {
-    renderTickets();
-  }, 50);
+  setTimeout(() => { renderTickets(); }, 50);
 }
 
 // ===================== Обработчики =====================
-swapBtn.addEventListener('click', () => {
-  const tmp = fromInput.value;
-  fromInput.value = toInput.value;
-  toInput.value = tmp;
-  swapBtn.style.transform = 'rotate(180deg)';
-  setTimeout(() => { swapBtn.style.transform = ''; }, 250);
-  haptic('light');
-});
+if (swapBtn) {
+  swapBtn.addEventListener('click', () => {
+    const tmp = fromInput.value;
+    fromInput.value = toInput.value;
+    toInput.value = tmp;
+    swapBtn.style.transform = 'rotate(180deg)';
+    setTimeout(() => { swapBtn.style.transform = ''; }, 250);
+    haptic('light');
+  });
+}
 
-createTicketBtn.addEventListener('click', createTicket);
+if (createTicketBtn) createTicketBtn.addEventListener('click', createTicket);
 
-backToTicketsBtn.addEventListener('click', () => {
-  restoreBrightness();
-  switchView('ticketsView');
-});
+if (backToTicketsBtn) {
+  backToTicketsBtn.addEventListener('click', () => {
+    restoreBrightness();
+    switchView('ticketsView');
+  });
+}
 
 // Нижняя навигация
 navItems.forEach(item => {
@@ -241,23 +262,36 @@ tabs.forEach(tab => {
 
 // Переворот штрихкода
 let barcodeAnimating = false;
-barcodeCard.addEventListener('click', () => {
-  if(barcodeAnimating) return;
-  barcodeAnimating = true;
-  haptic('light');
-  barcodeCard.classList.add('flipped');
-  setTimeout(() => {
-    barcodeCard.classList.remove('flipped');
-    setTimeout(() => { barcodeAnimating = false; }, 500);
-  }, 550);
-});
+if (barcodeCard) {
+  barcodeCard.addEventListener('click', () => {
+    if(barcodeAnimating) return;
+    barcodeAnimating = true;
+    haptic('light');
+    barcodeCard.classList.add('flipped');
+    setTimeout(() => {
+      barcodeCard.classList.remove('flipped');
+      setTimeout(() => { barcodeAnimating = false; }, 500);
+    }, 550);
+  });
+}
+
+// Помощь
+if (helperToggle && helperBody && helperChev) {
+  helperToggle.addEventListener('click', () => {
+    helperBody.classList.toggle('open');
+    helperChev.classList.toggle('open');
+    haptic('light');
+  });
+}
 
 // ===================== Инициализация =====================
 tickets = loadData();
 
 // Устанавливаем дату по умолчанию
-const today = new Date().toISOString().slice(0,10);
-dateInput.value = today;
+if (dateInput) {
+  const today = new Date().toISOString().slice(0,10);
+  dateInput.value = today;
+}
 
 // Первичный рендер
 renderTickets();
@@ -266,8 +300,11 @@ renderTickets();
 try{
   if (window.Telegram && window.Telegram.WebApp) {
     window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand();
-    // Устанавливаем цвет фона под стиль приложения
-    window.Telegram.WebApp.setHeaderColor('#f4f3f6');
+    if (typeof window.Telegram.WebApp.expand === 'function') {
+      window.Telegram.WebApp.expand();
+    }
+    if (typeof window.Telegram.WebApp.setHeaderColor === 'function') {
+      window.Telegram.WebApp.setHeaderColor('#f4f3f6');
+    }
   }
 }catch(e){}
