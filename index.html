@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Электрички</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <div class="app">
@@ -93,7 +93,7 @@
 
       <div class="barcode-wrap">
         <div class="barcode-card" id="barcodeCard">
-          <img id="barcodeImg" src="barcode.png?v=5" alt="Штрихкод билета">
+          <img id="barcodeImg" src="barcode.png?v=6" alt="Штрихкод билета">
         </div>
       </div>
       <div class="hint">Нажмите на штрихкод, чтобы отразить его</div>
@@ -107,12 +107,12 @@
       <div class="ticket-no" id="detailNo">Билет № 3682644418218</div>
     </div>
 
-    <!-- ВОЗВРАЩАЕМ ВКЛАДКУ ПОМОЩИ -->
+    <!-- ВКЛАДКА ПОМОЩИ (ИЗНАЧАЛЬНО ЗАКРЫТА) -->
     <button class="helper" id="helperToggle">
       <span>Что делать, если билет не работает</span>
       <span class="chev" id="helperChev">⌄</span>
     </button>
-    <div class="helper-body" id="helperBody">
+    <div class="helper-body hidden" id="helperBody">
       Обновите страницу и убедитесь, что экран телефона чистый, а яркость увеличена на максимум.
       Если штрихкод всё равно не считывается, покажите билет контролёру напрямую с экрана без зум-жестов.
     </div>
@@ -133,6 +133,6 @@
 </div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="script.js?v=5"></script>
+<script src="script.js?v=6"></script>
 </body>
 </html>
