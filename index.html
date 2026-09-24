@@ -7,10 +7,10 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Электрички</title>
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
-<div class="app">
+<div class="app" id="appRoot">
 
   <!-- ========== ВКЛАДКА: БИЛЕТЫ ========== -->
   <section class="view" id="ticketsView">
@@ -23,9 +23,7 @@
       <div class="tab" data-tab="used">Использованные</div>
     </div>
 
-    <div class="content" id="ticketsList">
-      <!-- Сюда будут рендериться билеты -->
-    </div>
+    <div class="content" id="ticketsList"></div>
   </section>
 
   <!-- ========== ВКЛАДКА: НАСТРОЙКИ (СОЗДАНИЕ) ========== -->
@@ -71,14 +69,14 @@
   </section>
 
   <!-- ========== ЭКРАН: ПРОСМОТР БИЛЕТА ========== -->
-  <section class="view hidden" id="ticketDetailView">
+  <section class="view ticket-detail-view hidden" id="ticketDetailView">
     <div class="topbar">
       <button class="back" id="backToTicketsBtn">←</button>
       <h1>Билет</h1>
     </div>
     <div class="divider"></div>
 
-    <div class="content">
+    <div class="ticket-fullscreen">
       <div class="status">Билет действителен</div>
 
       <div class="route-row">
@@ -93,7 +91,7 @@
 
       <div class="barcode-wrap">
         <div class="barcode-card" id="barcodeCard">
-          <img id="barcodeImg" src="barcode.png?v=6" alt="Штрихкод билета">
+          <img id="barcodeImg" src="barcode.png?v=7" alt="Штрихкод билета">
         </div>
       </div>
       <div class="hint">Нажмите на штрихкод, чтобы отразить его</div>
@@ -107,7 +105,6 @@
       <div class="ticket-no" id="detailNo">Билет № 3682644418218</div>
     </div>
 
-    <!-- ВКЛАДКА ПОМОЩИ (ИЗНАЧАЛЬНО ЗАКРЫТА) -->
     <button class="helper" id="helperToggle">
       <span>Что делать, если билет не работает</span>
       <span class="chev" id="helperChev">⌄</span>
@@ -119,7 +116,7 @@
   </section>
 
   <!-- ========== НИЖНЯЯ НАВИГАЦИЯ ========== -->
-  <nav class="bottom-nav">
+  <nav class="bottom-nav" id="bottomNav">
     <button class="nav-item active" data-view="ticketsView">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
       <span>Билеты</span>
@@ -133,6 +130,6 @@
 </div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="script.js?v=6"></script>
+<script src="script.js?v=7"></script>
 </body>
 </html>
