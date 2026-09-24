@@ -31,7 +31,7 @@ html,body{
   flex-direction:column;
   min-height:100vh;
 }
-.view.hidden{ display:none; }
+.view.hidden{ display:none !important; }
 
 /* ---------- Шапка ---------- */
 .header{
@@ -390,18 +390,23 @@ select.plain-input {
   font-size: 18px;
 }
 .helper .chev.open{ transform:rotate(180deg); }
+
+/* КЛЮЧЕВОЕ: тело помощи скрыто по умолчанию и при классе .hidden */
 .helper-body{
-  max-height:0;
-  overflow:hidden;
-  padding:0 16px;
+  padding:0 16px 16px;
   color:var(--muted);
   font-size:14px;
   line-height:1.5;
-  transition:max-height .25s ease, padding .25s ease;
+  transition: max-height .25s ease, padding .25s ease, opacity .2s ease;
+  max-height: 200px;
+  opacity: 1;
+  overflow: hidden;
 }
-.helper-body.open{
-  max-height:200px;
-  padding:0 16px 16px;
+.helper-body.hidden{
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
 }
 
 /* ---------- Нижняя навигация ---------- */
